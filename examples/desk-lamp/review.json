@@ -1,0 +1,14 @@
+{
+  "kind": "text",
+  "artifact": {
+    "path": "final.md",
+    "sha256": "fa203c4cbaffa6eb7f414c2145e93abd7daa30a8f935b2143947a384cfe0d9cf"
+  },
+  "reviews": {
+    "content": {
+      "verdict": "PASS",
+      "sha256": "fa203c4cbaffa6eb7f414c2145e93abd7daa30a8f935b2143947a384cfe0d9cf",
+      "evidence": "content-review.md"
+    }
+  }
+}

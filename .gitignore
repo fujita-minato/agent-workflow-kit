@@ -1,0 +1,6 @@
+.env
+.env.*
+.agent-workflow-local/
+__pycache__/
+*.pyc
+.DS_Store

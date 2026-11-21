@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+python3 -B tests/check_workflow.py
+python3 -B scripts/check_delivery.py examples/desk-lamp/review.json
+python3 -B scripts/privacy_check.py .
