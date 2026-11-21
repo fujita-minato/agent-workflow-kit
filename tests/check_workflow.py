@@ -44,6 +44,12 @@ class WorkflowTest(unittest.TestCase):
                 str(ROOT / "examples/desk-lamp/review.json"),
             ], check=True, capture_output=True, text=True)
             self.assertIn("PASS: final.md", result.stdout)
+            final = ROOT / "examples/desk-lamp/final.md"
+            fingerprint = subprocess.run([
+                sys.executable, "-B", str(target / ".agent-workflow-local/check_delivery.py"),
+                "--sha256", str(final),
+            ], check=True, capture_output=True, text=True)
+            self.assertEqual(fingerprint.stdout.strip(), hashlib.sha256(final.read_bytes()).hexdigest())
 
     def test_install_conflict_and_symlink(self):
         with TemporaryDirectory() as folder:
@@ -62,24 +68,37 @@ class WorkflowTest(unittest.TestCase):
     def test_film_requires_both_reviews_of_exact_version(self):
         with TemporaryDirectory() as folder:
             bundle = Path(folder)
-            artifact = bundle / "test.mp4"
+            artifact = bundle / "test.mkv"
             artifact.write_bytes(b"fictional test bytes")
             digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
             record = bundle / "review.json"
             content = bundle / "content.md"
             visual = bundle / "visual.md"
-            content.write_text("Fictional evidence for content")
-            visual.write_text("Separate fictional visual evidence")
+            content.write_text(f"PASS {digest}\nFictional evidence for content\n", encoding="utf-8")
+            visual.write_text(f"PASS {digest}\nSeparate fictional visual evidence\n", encoding="utf-8")
             details = {
                 "kind": "film",
                 "artifact": {"path": artifact.name, "sha256": digest},
                 "reviews": {
-                    "content": {"verdict": "PASS", "sha256": digest, "evidence": content.name},
-                    "visual": {"verdict": "PASS", "sha256": digest, "evidence": visual.name},
+                    "content": {"verdict": "PASS", "sha256": digest, "evidence": content.name,
+                                "evidence_sha256": hashlib.sha256(content.read_bytes()).hexdigest()},
+                    "visual": {"verdict": "PASS", "sha256": digest, "evidence": visual.name,
+                               "evidence_sha256": hashlib.sha256(visual.read_bytes()).hexdigest()},
                 },
             }
             record.write_text(json.dumps(details))
             self.assertEqual(check(record), artifact.resolve())
+
+            original_evidence = visual.read_bytes()
+            visual.write_text(f"REVISE {digest}\nThe final action needs to be clearer.\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "visual evidence hash"):
+                check(record)
+            details["reviews"]["visual"]["evidence_sha256"] = hashlib.sha256(visual.read_bytes()).hexdigest()
+            record.write_text(json.dumps(details))
+            with self.assertRaisesRegex(ValueError, "visual evidence must record PASS"):
+                check(record)
+            visual.write_bytes(original_evidence)
+            details["reviews"]["visual"]["evidence_sha256"] = hashlib.sha256(original_evidence).hexdigest()
 
             details["reviews"]["visual"]["verdict"] = "REVISE"
             record.write_text(json.dumps(details))
@@ -102,6 +121,31 @@ class WorkflowTest(unittest.TestCase):
             artifact.write_bytes(b"new cut")
             with self.assertRaisesRegex(ValueError, "hash no longer matches"):
                 check(record)
+
+            new_digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+            details["artifact"]["sha256"] = new_digest
+            for review in details["reviews"].values():
+                review["sha256"] = new_digest
+            record.write_text(json.dumps(details))
+            with self.assertRaisesRegex(ValueError, "content evidence must record PASS for this artifact hash"):
+                check(record)
+
+    def test_text_requires_supported_document_format(self):
+        with TemporaryDirectory() as folder:
+            bundle = Path(folder)
+            record = bundle / "review.json"
+            fixture = ROOT / "examples/desk-lamp"
+            details = json.loads((fixture / record.name).read_text())
+            evidence = fixture / "content-review.md"
+            (bundle / evidence.name).write_bytes(evidence.read_bytes())
+            for extension in (".mkv", ".avi", ".png"):
+                with self.subTest(extension=extension):
+                    artifact = bundle / f"candidate{extension}"
+                    artifact.write_bytes((fixture / "final.md").read_bytes())
+                    details["artifact"]["path"] = artifact.name
+                    record.write_text(json.dumps(details))
+                    with self.assertRaisesRegex(ValueError, "Unsupported text format"):
+                        check(record)
 
     def test_privacy_checks_reject_local_inputs(self):
         with TemporaryDirectory() as folder:

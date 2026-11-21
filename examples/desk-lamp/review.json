@@ -8,7 +8,8 @@
     "content": {
       "verdict": "PASS",
       "sha256": "fa203c4cbaffa6eb7f414c2145e93abd7daa30a8f935b2143947a384cfe0d9cf",
-      "evidence": "content-review.md"
+      "evidence": "content-review.md",
+      "evidence_sha256": "3cd1646ece8757a00a6efad8670e14d29757529029ab32d2efab351e2811a705"
     }
   }
 }

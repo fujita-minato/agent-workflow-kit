@@ -28,12 +28,12 @@ The roles can run as separate agents or as explicit stages handled by a smaller 
 
 Use a single versioned review record for the candidate. For a film, content and visuals each need a PASS and an evidence reference tied to that artifact. For revised text, content needs a PASS. A project's first-sample approval and publication permissions are separate decisions. [Review record format](skills/deliver-revision/references/review-record.md)
 
-The delivery checker verifies files, identifiers and SHA-256 hashes. A person or independent reviewer still judges the work.
+The delivery checker verifies the candidate format, the artifact's SHA-256 and the SHA-256 of each review evidence file. It also checks that each evidence file names the exact candidate and records PASS. A reviewer still judges the work. Use independent local playback for a film if the agent cannot play it.
 
 ## Adapting the kit
 
 - Choose tools, browser profile aliases, project directories and access limits in your own environment. Open only the intended project's profile and verify it before accessing signed-in sites.
-- Keep credentials, account mappings, transcripts, screenshots and active deliverables outside the public repository. `python3 scripts/privacy_check.py .` checks the release tree for common privacy leaks. Inspect the diff and Git metadata before sharing.
+- Keep credentials, account mappings, transcripts, screenshots, active deliverables and review evidence local. Use a local reviewer for private material and keep it out of hosted tools and public repositories. `python3 scripts/privacy_check.py .` checks the release tree for common privacy leaks. Inspect the diff and Git metadata before sharing.
 - The kit provides project-local role templates and checks. Configure any scheduling, browser integration or publishing integration in your own environment according to its permissions.
 
 [MIT License](LICENSE)
