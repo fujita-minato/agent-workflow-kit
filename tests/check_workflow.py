@@ -3,6 +3,7 @@
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -50,6 +51,47 @@ class WorkflowTest(unittest.TestCase):
                 "--sha256", str(final),
             ], check=True, capture_output=True, text=True)
             self.assertEqual(fingerprint.stdout.strip(), hashlib.sha256(final.read_bytes()).hexdigest())
+
+    def test_installed_feedback_check_rejects_a_repeated_regression(self):
+        with TemporaryDirectory() as folder:
+            target = Path(folder)
+            install(target, "both")
+            example = target / "example"
+            shutil.copytree(ROOT / "examples/desk-lamp", example)
+            command = [sys.executable, "-B", str(target / ".agent-workflow-local/check_feedback.py"),
+                       str(example / "feedback.json")]
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            self.assertIn("PASS lamp-control-size", result.stdout)
+
+            bad = example / "layout-before.json"
+            candidate = example / "layout-after.json"
+            bad_data = bad.read_bytes()
+            good_data = candidate.read_bytes()
+            candidate.write_bytes(bad_data)
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("lamp-control-size candidate", result.stderr)
+
+            candidate.write_bytes(good_data)
+            bad.write_bytes(good_data)
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("lamp-control-size known_bad", result.stderr)
+
+            bad.write_bytes(bad_data)
+            (example / "check_control_size.py").write_text("raise RuntimeError('cannot check')\n")
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("lamp-control-size known_bad", result.stderr)
+
+            manifest = example / "feedback.json"
+            entries = json.loads(manifest.read_text())
+            (target / "outside.json").write_bytes(good_data)
+            entries[0]["candidate"] = "../outside.json"
+            manifest.write_text(json.dumps(entries))
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("relative to the manifest directory", result.stderr)
 
     def test_install_conflict_and_symlink(self):
         with TemporaryDirectory() as folder:

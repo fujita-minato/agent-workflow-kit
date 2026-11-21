@@ -10,7 +10,7 @@ Requires Python 3.11 or newer. The tools use the standard library.
 2. From this repository, run `python3 scripts/install.py /path/to/your-project --runtime both`. Use `claude` or `codex` to install one runtime. The target must already exist.
 3. Start the agent in the target project, using its coordinator role or the `coordinate-work` skill. Give it a real request and the project folder where it should find the latest handoff. [Walk through a fictional example](examples/run.md).
 
-The installer writes project-local skills, role definitions and the delivery checker. It keeps existing files, reports conflicts before writing, and can be rerun to check or add an installation. It does not create accounts, configure browser profiles or install integrations.
+The installer writes project-local skills, role definitions and verification scripts. It keeps existing files, reports conflicts before writing, and can be rerun to check or add an installation. It does not create accounts, configure browser profiles or install integrations.
 
 | Role | Responsibility |
 | --- | --- |
@@ -29,6 +29,8 @@ The roles can run as separate agents or as explicit stages handled by a smaller 
 Use a single versioned review record for the candidate. For a film, content and visuals each need a PASS and an evidence reference tied to that artifact. For revised text, content needs a PASS. A project's first-sample approval and publication permissions are separate decisions. [Review record format](skills/deliver-revision/references/review-record.md)
 
 The delivery checker verifies the candidate format, the artifact's SHA-256 and the SHA-256 of each review evidence file. It also checks that each evidence file names the exact candidate and records PASS. A reviewer still judges the work. Use independent local playback for a film if the agent cannot play it.
+
+Use [feedback regression checks](skills/coordinate-work/references/feedback-checks.md) for recurring corrections. Rerun the installer to add the checker to an existing installation. Wire it into your project's verification entry point so each check must reject a known bad example and accept the current candidate.
 
 ## Adapting the kit
 

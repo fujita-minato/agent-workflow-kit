@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install project-local skills, role definitions and the delivery checker."""
+"""Install project-local skills, role definitions and workflow checks."""
 import argparse
 from pathlib import Path
 
@@ -20,7 +20,8 @@ def install(target, runtime):
                 sources[skills / src.relative_to(ROOT / "skills")] = src
         for src in (ROOT / "agents" / name).iterdir():
             sources[config / "agents" / src.name] = src
-    sources[Path(".agent-workflow-local/check_delivery.py")] = ROOT / "scripts/check_delivery.py"
+    for helper in ("check_delivery.py", "check_feedback.py"):
+        sources[Path(".agent-workflow-local") / helper] = ROOT / "scripts" / helper
 
     pending = {}
     for rel, src in sorted(sources.items()):

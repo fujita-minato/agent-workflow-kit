@@ -1,0 +1,9 @@
+[
+  {
+    "id": "lamp-control-size",
+    "requirement": "The switch target in the fictional tutorial is at least 44 pixels wide and 44 pixels high.",
+    "check": "check_control_size.py",
+    "known_bad": "layout-before.json",
+    "candidate": "layout-after.json"
+  }
+]
